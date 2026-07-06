@@ -101,7 +101,7 @@ static void wifi_event_handler(void *arg,
             }
             s_ip_logged = true;
         }
-        esp_wifi_set_ps(WIFI_PS_NONE);   // disable modem sleep – prevents ping timeouts
+        esp_wifi_set_ps(WIFI_PS_NONE);   // disable modem sleep - prevents ping timeouts
         if (s_wifi_event_group) {
             xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
         }

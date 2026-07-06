@@ -15,7 +15,7 @@
 #include "binary_input.h"
 #include "binary_output.h"
 #include "binary_value.h"
-#include "../../main/wifi_helper.h"
+#include "wifi_helper.h"
 #include "bacnet_cov.h"
 #include "bacnet_ip.h"
 #include "bacnet_mstp.h"

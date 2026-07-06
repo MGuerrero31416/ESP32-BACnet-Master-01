@@ -7,7 +7,7 @@
 #include "esp_log.h"
 
 #include "../../main/User_Settings.h"
-#include "../../main/mstp_rs485.h"
+#include "mstp_rs485.h"
 #include "bacnet_app.h"
 
 #include "bacnet/bacapp.h"

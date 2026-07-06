@@ -1,6 +1,7 @@
 #include "display.h"
 #include "touch_bsp.h"
 #include "screens/screen_2.h"
+#include "screens/screen_3.h"
 #include "screens/screen_main.h"
 
 #include <stdio.h>
@@ -14,6 +15,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -22,9 +24,22 @@
 
 static const char *TAG = "display";
 
+static void log_heap_state(const char *context)
+{
+    ESP_LOGI(
+        TAG,
+        "[HEAP] %s free=%u min=%u internal=%u",
+        context,
+        (unsigned)esp_get_free_heap_size(),
+        (unsigned)esp_get_minimum_free_heap_size(),
+        (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+}
+
 typedef enum {
     SCREEN_MAIN = 0,
-    SCREEN_2 = 1
+    SCREEN_2 = 1,
+    SCREEN_3 = 2,
+    SCREEN_COUNT
 } display_screen_t;
 
 static SemaphoreHandle_t s_display_mutex = NULL;
@@ -34,10 +49,12 @@ static lv_disp_draw_buf_t s_draw_buf;
 static lv_color_t *s_buf_1 = NULL;
 static lv_color_t *s_buf_2 = NULL;
 static lv_disp_drv_t s_disp_drv;
+static lv_indev_drv_t s_indev_drv;
 static esp_timer_handle_t s_lvgl_tick_timer = NULL;
 
 static lv_obj_t *s_screen_main = NULL;
 static lv_obj_t *s_screen_2 = NULL;
+static lv_obj_t *s_screen_3 = NULL;
 static volatile display_screen_t s_active_screen = SCREEN_MAIN;
 static bool s_display_ready = false;
 
@@ -61,10 +78,13 @@ static bool s_display_ready = false;
 
 static void create_main_screen(void);
 static void create_screen_2(void);
+static void create_screen_3(void);
 static void set_active_screen(display_screen_t next_screen);
 static void touch_gesture_task(void *pvParameters);
 static void lvgl_task(void *pvParameters);
 static esp_err_t display_panel_init(void);
+static lv_obj_t *get_screen_object(display_screen_t screen);
+static void lvgl_touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 
 static uint32_t millis_now(void)
 {
@@ -105,6 +125,22 @@ static void lvgl_tick_cb(void *arg)
     lv_tick_inc(LVGL_TICK_PERIOD_MS);
 }
 
+static void lvgl_touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
+{
+    uint16_t x = 0;
+    uint16_t y = 0;
+
+    (void)indev_drv;
+
+    if (touch_bsp_get_xy(&x, &y)) {
+        data->state = LV_INDEV_STATE_PRESSED;
+        data->point.x = (lv_coord_t)x;
+        data->point.y = (lv_coord_t)y;
+    } else {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
+}
+
 static void create_main_screen(void)
 {
     s_screen_main = screen_main_create();
@@ -113,6 +149,26 @@ static void create_main_screen(void)
 static void create_screen_2(void)
 {
     s_screen_2 = screen_2_create();
+}
+
+static void create_screen_3(void)
+{
+    s_screen_3 = screen_3_create();
+}
+
+static lv_obj_t *get_screen_object(display_screen_t screen)
+{
+    switch (screen) {
+    case SCREEN_MAIN:
+        return s_screen_main;
+    case SCREEN_2:
+        return s_screen_2;
+    case SCREEN_3:
+        return s_screen_3;
+    case SCREEN_COUNT:
+    default:
+        return s_screen_main;
+    }
 }
 
 static esp_err_t display_panel_init(void)
@@ -178,12 +234,9 @@ static void set_active_screen(display_screen_t next_screen)
         return;
     }
 
-    lv_scr_load(next_screen == SCREEN_MAIN ? s_screen_main : s_screen_2);
+    lv_scr_load(get_screen_object(next_screen));
     if (next_screen == SCREEN_MAIN) {
         screen_main_reset_footer_cache();
-   //     ESP_LOGI(TAG, "Switched to MAIN screen");
-    } else {
-   //     ESP_LOGI(TAG, "Switched to SCREEN-2");
     }
     s_active_screen = next_screen;
 
@@ -226,11 +279,13 @@ static void touch_gesture_task(void *pvParameters)
 
             if (duration_ms <= 1200 && ((orthogonal_delta < 0 ? -orthogonal_delta : orthogonal_delta) <= 70)) {
                 if (dominant_delta <= -45) {
-             //       ESP_LOGI(TAG, "Swipe LEFT detected: dx=%d dy=%d", dx, dy);
-                    set_active_screen(SCREEN_2);
+                    display_screen_t next_screen =
+                        (display_screen_t)((s_active_screen + 1) % SCREEN_COUNT);
+                    set_active_screen(next_screen);
                 } else if (dominant_delta >= 45) {
-             //       ESP_LOGI(TAG, "Swipe RIGHT detected: dx=%d dy=%d", dx, dy);
-                    set_active_screen(SCREEN_MAIN);
+                    display_screen_t next_screen =
+                        (display_screen_t)((s_active_screen + SCREEN_COUNT - 1) % SCREEN_COUNT);
+                    set_active_screen(next_screen);
                 }
             }
 
@@ -294,15 +349,22 @@ extern "C" void display_init(void)
     s_disp_drv.draw_buf = &s_draw_buf;
     lv_disp_drv_register(&s_disp_drv);
 
+    lv_indev_drv_init(&s_indev_drv);
+    s_indev_drv.type = LV_INDEV_TYPE_POINTER;
+    s_indev_drv.read_cb = lvgl_touch_read_cb;
+    lv_indev_drv_register(&s_indev_drv);
+
     esp_timer_create_args_t tick_timer_args = {};
     tick_timer_args.callback = lvgl_tick_cb;
     tick_timer_args.name = "lvgl_tick";
+    log_heap_state("before create lvgl tick timer");
     ESP_ERROR_CHECK(esp_timer_create(&tick_timer_args, &s_lvgl_tick_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(s_lvgl_tick_timer, LVGL_TICK_PERIOD_MS * 1000ULL));
 
     if (xSemaphoreTake(s_display_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         create_main_screen();
         create_screen_2();
+        create_screen_3();
         lv_scr_load(s_screen_main);
         s_active_screen = SCREEN_MAIN;
         s_display_ready = true;
@@ -313,10 +375,14 @@ extern "C" void display_init(void)
     if (touch_err != ESP_OK) {
         ESP_LOGW(TAG, "Touch init failed (addr 0x%02X, SDA=%d, SCL=%d): %s",
                  TOUCH_I2C_ADDR, TOUCH_I2C_SDA_PIN, TOUCH_I2C_SCL_PIN, esp_err_to_name(touch_err));
-    } else if (xTaskCreate(touch_gesture_task, "touch_gesture", 4096, NULL, 3, NULL) != pdPASS) {
-        ESP_LOGW(TAG, "Failed to start touch gesture task");
+    } else {
+        log_heap_state("before create touch_gesture task");
+        if (xTaskCreate(touch_gesture_task, "touch_gesture", 4096, NULL, 3, NULL) != pdPASS) {
+            ESP_LOGW(TAG, "Failed to start touch gesture task");
+        }
     }
 
+    log_heap_state("before create lvgl task");
     if (xTaskCreate(lvgl_task, "lvgl", 6144, NULL, 4, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Failed to start LVGL task");
     }
@@ -340,6 +406,40 @@ extern "C" void display_update_values(float av1, float av2, float av3, float av4
     }
 
     screen_main_update_values(av1, av2, av3, av4);
+
+    xSemaphoreGive(s_display_mutex);
+}
+
+extern "C" void display_update_sen54_controls(bool measurement_enabled)
+{
+    if (!s_display_mutex || !s_display_ready) {
+        return;
+    }
+
+    if (xSemaphoreTake(s_display_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
+        return;
+    }
+
+    screen_2_update_measurement(measurement_enabled);
+
+    xSemaphoreGive(s_display_mutex);
+}
+
+extern "C" void display_update_sen54_diagnostics(
+    bool fan_failure,
+    bool laser_error,
+    bool voc_error,
+    bool rht_error)
+{
+    if (!s_display_mutex || !s_display_ready) {
+        return;
+    }
+
+    if (xSemaphoreTake(s_display_mutex, pdMS_TO_TICKS(50)) != pdTRUE) {
+        return;
+    }
+
+    screen_3_update_diagnostics(fan_failure, laser_error, voc_error, rht_error);
 
     xSemaphoreGive(s_display_mutex);
 }

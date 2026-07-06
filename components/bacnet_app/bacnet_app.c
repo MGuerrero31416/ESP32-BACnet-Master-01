@@ -6,8 +6,10 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "esp_event.h"
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_system.h"
 
 #include "User_Settings.h"
 #include "analog_input.h"
@@ -43,6 +45,17 @@
 #include "bacnet/datalink/datalink.h"
 
 static const char *TAG = "bacnet";
+
+static void log_heap_state(const char *context)
+{
+    ESP_LOGI(
+        TAG,
+        "[HEAP] %s free=%u min=%u internal=%u",
+        context,
+        (unsigned)esp_get_free_heap_size(),
+        (unsigned)esp_get_minimum_free_heap_size(),
+        (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+}
 
 static SemaphoreHandle_t bacnet_datalink_mutex = NULL;
 static char datalink_bip[] = "bip";
@@ -245,6 +258,7 @@ void bacnet_app_start(void)
 
     bacnet_cov_start();
 
+    log_heap_state("before create bacnet_maint task");
     if (xTaskCreate(bacnet_maintenance_task, "bacnet_maint", 6144, NULL, 4, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create bacnet_maint task");
     }

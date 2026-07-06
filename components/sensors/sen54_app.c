@@ -5,6 +5,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_heap_caps.h"
 
 #include "User_Settings.h"
 #include "sen54.h"
@@ -30,6 +32,17 @@ static const char *TAG = "bacnet";
 
 static bool sen54_auto_cleaning_interval_valid = false;
 static uint32_t sen54_auto_cleaning_interval_seconds = 0;
+
+static void log_heap_state(const char *context)
+{
+    ESP_LOGI(
+        TAG,
+        "[HEAP] %s free=%u min=%u internal=%u",
+        context,
+        (unsigned)esp_get_free_heap_size(),
+        (unsigned)esp_get_minimum_free_heap_size(),
+        (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+}
 
 static void sen54_set_command_bv_inactive(uint32_t instance)
 {
@@ -178,7 +191,11 @@ static void sen54_task(void *pvParameters)
     sen54_data_t sensor_data;
     uint8_t consecutive_failures = 0;
     TickType_t last_status_poll = 0;
+    TickType_t last_measurement_start_attempt = 0;
     const TickType_t status_poll_interval_ticks = pdMS_TO_TICKS(5000);
+    const TickType_t measurement_start_retry_interval_ticks = pdMS_TO_TICKS(10000);
+
+    ESP_LOGI(TAG, "[SEN54] task started");
 
     vTaskDelay(pdMS_TO_TICKS(3000));
 
@@ -208,6 +225,7 @@ static void sen54_task(void *pvParameters)
                 ESP_LOGE(TAG, "[SEN54] Full reset command failed (%s)", esp_err_to_name(err));
             }
             sen54_set_command_bv_inactive(1);
+            ESP_LOGI(TAG, "[SEN54] Full reset command acknowledged (BV1 INACTIVE)");
             Binary_Value_Present_Value_Set(SEN54_MEASUREMENT_ENABLE_BV_INSTANCE,
                 sen54_is_measurement_enabled() ? BINARY_ACTIVE : BINARY_INACTIVE);
 
@@ -220,10 +238,14 @@ static void sen54_task(void *pvParameters)
         {
             BACNET_BINARY_PV bv2 = Binary_Value_Present_Value(SEN54_MEASUREMENT_ENABLE_BV_INSTANCE);
             bool currently_enabled = sen54_is_measurement_enabled();
+            TickType_t now_ticks = xTaskGetTickCount();
 
             if (bv2 == BINARY_ACTIVE && !currently_enabled) {
-                if (!sen54_start_measurement()) {
-                    Binary_Value_Present_Value_Set(SEN54_MEASUREMENT_ENABLE_BV_INSTANCE, BINARY_INACTIVE);
+                if ((now_ticks - last_measurement_start_attempt) >= measurement_start_retry_interval_ticks) {
+                    last_measurement_start_attempt = now_ticks;
+                    if (!sen54_start_measurement()) {
+                        ESP_LOGW(TAG, "[SEN54] Measurement start failed, retrying later");
+                    }
                 }
             } else if (bv2 == BINARY_INACTIVE && currently_enabled) {
                 if (!sen54_stop_measurement()) {
@@ -233,8 +255,12 @@ static void sen54_task(void *pvParameters)
         }
 
         if (Binary_Value_Present_Value(SEN54_FAN_CLEANING_BV_INSTANCE) == BINARY_ACTIVE) {
-            sen54_start_fan_cleaning();
+            ESP_LOGI(TAG, "[SEN54] Fan cleaning command requested (BV3 ACTIVE)");
+            if (!sen54_start_fan_cleaning()) {
+                ESP_LOGW(TAG, "[SEN54] Fan cleaning command failed");
+            }
             sen54_set_command_bv_inactive(SEN54_FAN_CLEANING_BV_INSTANCE);
+            ESP_LOGI(TAG, "[SEN54] Fan cleaning command acknowledged (BV3 INACTIVE)");
         }
 
         if (Binary_Value_Present_Value(SEN54_CLEAR_STATUS_BV_INSTANCE) == BINARY_ACTIVE) {
@@ -287,6 +313,7 @@ static void sen54_task(void *pvParameters)
 
 void sen54_app_start(void)
 {
+    log_heap_state("before create sen54 task");
     if (xTaskCreate(sen54_task, "sen54", 4096, NULL, 3, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create sen54 task");
     }

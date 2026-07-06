@@ -10,9 +10,9 @@ extern "C" {
 #endif
 
 // I2C configuration - adjust pins to match your hardware
-#define SEN54_I2C_PORT    0          // I2C_NUM_0
-#define SEN54_I2C_SDA_PIN 13
-#define SEN54_I2C_SCL_PIN 14
+#define SEN54_I2C_PORT    1          // I2C_NUM_0
+#define SEN54_I2C_SDA_PIN 42
+#define SEN54_I2C_SCL_PIN 45
 #define SEN54_I2C_ADDR    0x69
 #define SEN54_I2C_FREQ_HZ 100000
 

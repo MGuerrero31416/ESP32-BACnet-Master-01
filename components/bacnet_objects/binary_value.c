@@ -149,8 +149,8 @@ void bacnet_create_binary_values(void) {
         Binary_Value_Write_Enable(instance);
         /* Load persisted values from NVS (if any) - unless override flag is set.
          * BV2 (SEN54 Measurement Enable) is excluded: it is not persistent and
-         * shall always boot into INACTIVE here; the sensor task sets it ACTIVE
-         * after a successful initialization. */
+         * shall always boot from the code default, which is ACTIVE.
+         * BV3/BV4 remain momentary command objects and must not be restored. */
         if (!override_nvs_on_flash && instance != 2 && instance != 3 && instance != 4) {
             bacnet_nvs_load_bv(instance);
         }

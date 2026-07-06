@@ -1,331 +1,221 @@
-# = This file is pending revision  =
+# ESP32 BACnet/IP + MS/TP Air Quality Monitor
 
-# ESP32 BACnet/IP & MS/TP Air Quality Monitor (SEN54 + ST7789)
+ESP32-based BACnet device supporting **BACnet/IP (Wi-Fi)** and **BACnet MS/TP (RS-485)**.
 
-**Current firmware:** v1.4.0
+This project started as an air quality monitor using the **Sensirion SEN54** sensor and a **ST7789 touch display**, but it is designed as a reusable ESP-IDF BACnet platform for other sensors, displays, and automation devices.
 
-ESP32-based BACnet/IP and BACnet MS/TP air quality monitor using the Sensirion SEN54 and a 1.9" 170×320 ST7789 TFT display.
+The firmware exposes sensor values, diagnostics, and control functions as standard BACnet objects.
 
-The device simultaneously supports BACnet/IP (Wi-Fi) and BACnet MS/TP (RS-485), exposing real-time air quality measurements, diagnostics, and maintenance controls as standard BACnet objects.
-
-In addition to being a complete air quality monitor, this project serves as a flexible ESP32 BACnet template for custom sensors, GPIO expansion, and building automation applications.
-
-## Highlights
-
-- Dual BACnet/IP and BACnet MS/TP operation
-- Sensirion SEN54 air quality sensor
-- 24 BACnet objects (1 Device object + 23 application objects)
-- Real-time ST7789 TFT display
-- BACnet Change of Value (COV) support
-- NVS persistence for configurable BACnet objects
-- BACnet maintenance and diagnostic objects for the SEN54
-- ESP-IDF 6.0
-- Easily extensible for additional BACnet objects and hardware
+---
 
 ## Features
 
-- **BACnet/IP Protocol** – Full BACnet/IP implementation over Wi-Fi
-- **BACnet MS/TP** – RS-485 MS/TP support running simultaneously with BACnet/IP
-- **Live Display** – Real-time display of selected BACnet object values on a 170×320 ST7789 TFT
-- **24 BACnet Objects**
-  - 1 Device object
-  - 7 Analog Values (AV1–AV7)
-  - 4 Binary Values (BV1–BV4)
-  - 4 Analog Inputs (AI1–AI4)
-  - 4 Binary Inputs (BI1–BI4)
-  - 4 Binary Outputs (BO1–BO4)
-- **Writable Metadata** – BACnet `Object Name` and `Description` are writable for AV, AI, BV, BI, and BO objects
-- **BACnet Change of Value (COV)** – Efficient real-time notifications
-- **Persistent Storage** – BACnet-configurable values are automatically stored in ESP32 Non-Volatile Storage (NVS)
-- **NVS Override** – Setting `USER_OVERRIDE_NVS_ON_FLASH=1` restores factory defaults while preserving Wi-Fi credentials when appropriate
-- **Centralized Configuration** – Most project settings are defined in [main/User_Settings.c](main/User_Settings.c)
-- **ESP32 Wi-Fi** – Built-in Wi-Fi for BACnet/IP communication
+- BACnet/IP over Wi-Fi
+- BACnet MS/TP over RS-485
+- Simultaneous BACnet/IP and MS/TP operation
+- Change of Value (COV) support
+- Persistent BACnet object configuration using ESP32 NVS
+- Sensirion SEN54 environmental sensor support
+- LVGL graphical display interface
+- Modular ESP-IDF component architecture
 
+---
 
-### SEN54 Integration
+## Hardware
 
-The integrated Sensirion SEN54 driver provides:
+Current reference hardware:
 
-- Continuous PM1.0, PM2.5, PM4.0 and PM10 measurements
-- Temperature and relative humidity measurements
-- VOC Index measurement
-- CRC-8 validation on all I²C communications
-- Automatic sensor disconnect detection
-- Thread-safe FreeRTOS implementation
-- BACnet-integrated maintenance commands
-- BACnet-integrated diagnostic status
+| Device | Description |
+|---|---|
+| MCU | ESP32 S3 |
+| Sensor | Sensirion SEN54 |
+| Display | ST7789 170x320 TFT + Touch |
+| RS-485 | MAX485 compatible transceiver |
 
-### BACnet Maintenance Objects
+---
+
+## BACnet Objects
+
+Default configuration:
+
+| Object | Quantity | Purpose |
+|---|---:|---|
+| Analog Value | 7 | Sensor values and configuration |
+| Binary Value | 4 | Commands |
+| Analog Input | 4 | Read-only analog points |
+| Binary Input | 4 | Diagnostics/status |
+| Binary Output | 4 | Control outputs |
+
+---
+
+## SEN54 Default Mapping
+
+| Object | Value |
+|---|---|
+| AV1 | Temperature |
+| AV2 | Relative Humidity |
+| AV3 | PM2.5 |
+| AV4 | VOC Index |
+| AV5 | PM1.0 |
+| AV6 | PM4.0 |
+| AV7 | Automatic cleaning interval |
+
+---
+
+## SEN54 Control Objects
 
 | Object | Function |
-|---------|----------|
-| BV1 | Full sensor reset |
-| BV2 | Enable/disable measurements |
-| BV3 | Start manual fan cleaning |
-| BV4 | Clear device status flags |
-| AV7 | Read/write automatic fan cleaning interval |
+|---|---|
+| BV1 | Sensor reset |
+| BV2 | Enable/disable measurement |
+| BV3 | Manual fan cleaning |
+| BV4 | Clear sensor status |
 
-### BACnet Diagnostic Objects
+---
+
+## SEN54 Diagnostics
 
 | Object | Status |
-|---------|--------|
+|---|---|
 | BI1 | Fan failure |
 | BI2 | Laser error |
 | BI3 | VOC sensor error |
-| BI4 | RHT sensor error |
+| BI4 | Temperature/Humidity sensor error |
 
-## Photos
-![Device](docs/images/01.jpg)
-![Device](docs/images/03.jpg)
-![Device](docs/images/04.jpg)
+---
 
+# Architecture
 
+The firmware uses ESP-IDF components to keep the BACnet core independent from hardware.
 
-## Hardware Requirements
+```
+main/
+└── main.c
+```
 
-- **Development Board:** ESP32-S3 N116R8
-- **Display:** ST7789 1.9" 170×320 ST
-- **Air Quality Sensor:** Sensirion SEN54
-- **RS-485 Transceiver:** MAX485 (or compatible)
+Application entry point only.
 
-## Hardware Components
+---
 
-### ST7789 TFT Display
+## Components
 
-- Resolution: 170×320 pixels
-- Driver path: ESP-IDF `esp_lcd` + LVGL
-- Orientation: XY swapped with panel gap configured in `main/display.cpp`
+```
+components/
 
-#### Connections
+├── bacnet_app/
+│   BACnet runtime
+│   BACnet/IP
+│   BACnet MS/TP
+│   COV handling
+│   Service initialization
 
-| Display Pin | ESP32 GPIO |
-|-------------|-----------:|
+├── bacnet_objects/
+│   Analog Values
+│   Binary Values
+│   Analog Inputs
+│   Binary Inputs
+│   Binary Outputs
 
+├── product_config/
+│   User configuration
+│   Device identity
+│   Network settings
+│   Object defaults
 
-### Sensirion SEN54 Air Quality Sensor
+├── sensors/
+│   Sensor application logic
 
-- Communication: I²C (100 kHz, address `0x69`)
-- Supply Voltage: 3.3 V or 5 V
+├── ui/
+│   Display
+│   Touch
+│   LVGL screens
 
-#### Connections
+├── networking/
+│   Wi-Fi support
 
-| SEN54 Pin | ESP32 GPIO |
-|-----------|-----------:|
-| SDA | GPIO13 |
-| SCL | GPIO14 |
-| VCC | 3.3 V or 5 V |
-| GND | GND |
+├── rs485/
+│   RS-485 hardware layer
 
-### Default BACnet Mapping
+└── system/
+    Boot initialization
+    NVS handling
+```
 
-| BACnet Object | Measurement |
-|---------------|-------------|
-| AV1 | Temperature (°C) |
-| AV2 | Relative Humidity (%RH) |
-| AV3 | PM2.5 (µg/m³) |
-| AV4 | VOC Index |
-| AV5 | PM1.0 (µg/m³) |
-| AV6 | PM4.0 (µg/m³) |
-| AV7 | Automatic Fan Cleaning Interval (seconds) |
-
-> **Note**
->
-> By default, SEN54 measurements are mapped to **Analog Value** objects rather than **Analog Input** objects. This makes it easy to remap sensors, simulate values during testing, or replace the data source without changing the BACnet object database.
-
-PM10 and NOx Index are supported by the SEN54 driver and can be mapped to BACnet objects if required.
-
-### SEN54 Features
-
-- Continuous measurement every 2 seconds
-- Device status polling every 5 seconds
-- CRC-8 validation (Sensirion polynomial `0x31`)
-- Thread-safe FreeRTOS mutex protection
-- Automatic sensor disconnect detection
-- Full sensor reset (`0xD304`)
-- Manual fan cleaning (`0x5607`)
-- Clear device status (`0xD210`)
-- Read/write automatic fan cleaning interval (`0x8004`)
-
-The default BACnet mapping can be modified by editing `sen54_task()` in [main/main.c](main/main.c).
-
-### Wi-Fi Connectivity
-
-- Built-in ESP32 Wi-Fi
-- BACnet/IP communication
-- Configured in [main/User_Settings.c](main/User_Settings.c)
-- Optional static IP support using `USER_WIFI_USE_STATIC_IP`
-
-### BACnet MS/TP (RS-485)
-
-- Transceiver: MAX485 (or compatible)
-- UART: UART2
-- Default baud rate: **38400**
-- Default MAC Address: **96**
-- Default Max Master: **127**
-- Default Max Info Frames: **80**
-
-#### Connections
-
-| MAX485 Pin | ESP32 GPIO |
-|------------|-----------:|
-| DE/RE | GPIO5 |
-| DI (TX) | GPIO16 |
-| RO (RX) | GPIO17 |
-
-> **Note**
->
-> Some BACnet MS/TP supervisors (such as Johnson Controls NAE) require devices to be added manually to the MS/TP field bus.
-
-## GPIO Summary
-
-| GPIO | Component | Signal |
-|------|-----------|--------|
-| GPIO13 | SEN54 | SDA |
-| GPIO14 | SEN54 | SCL |
-| GPIO2 | ST7789 | DC |
-| GPIO4 | ST7789 | Reset |
-| GPIO15 | ST7789 | Chip Select |
-| GPIO18 | ST7789 | SPI Clock |
-| GPIO23 | ST7789 | SPI MOSI |
-| GPIO32 | ST7789 | Backlight |
-| GPIO5 | MAX485 | DE / RE |
-| GPIO16 | MAX485 | UART TX |
-| GPIO17 | MAX485 | UART RX |
-
-## Build Requirements
-
-- **ESP-IDF:** v6.0.x
-- **Python:** 3.11+
-- **Toolchain:** xtensa-esp-elf (ESP32)
+---
 
 ## Configuration
 
-### Display Driver Settings
-
-Display initialization and pin mapping are configured in [main/display.cpp](main/display.cpp), including:
-
-- `LCD_PIN_NUM_MOSI 13`
-- `LCD_PIN_NUM_CLK 10`
-- `LCD_PIN_NUM_CS 12`
-- `LCD_PIN_NUM_DC 11`
-- `LCD_PIN_NUM_RST 9`
-- `LCD_GAP_X 0`, `LCD_GAP_Y 35`
-- `esp_lcd_panel_swap_xy(..., true)` and `esp_lcd_panel_mirror(..., true, false)`
-
+Project settings are centralized in:
 
 ```
-CONFIG_FREERTOS_HZ=1000
+components/product_config/User_Settings.c
+components/product_config/User_Settings.h
 ```
 
-### User Settings (Centralized Configuration)
+Configuration includes:
 
-Most user-configurable settings are centralized in [main/User_Settings.c](main/User_Settings.c) and declared in [main/User_Settings.h](main/User_Settings.h), including:
+- BACnet Device ID
+- BACnet/IP enable
+- BACnet MS/TP enable
+- MS/TP MAC address
+- Baud rate
+- Object names
+- Default values
 
-- WiFi SSID/password and static IP settings
-- BACnet Device Instance and BBMD registration
-- BACnet/IP and MS/TP enable flags (`USER_ENABLE_BACNET_IP`, `USER_ENABLE_BACNET_MSTP`)
-- MS/TP parameters (MAC, baud rate, max master, max info frames)
-- Default object names, descriptions, units, and initial values
+Private credentials can be stored locally using:
 
-### BACnet Object Configuration
+```
+User_Settings_Private.h
+```
 
-- **Analog Values (AV1-7)**: Configure names, descriptions, units, and initial values in [main/User_Settings.c](main/User_Settings.c)
+This file is ignored by Git and should not be uploaded.
 
-- **Binary Values (BV1-4)**: Configure names, descriptions, active/inactive text, and initial states in [main/User_Settings.c](main/User_Settings.c)
+---
 
-- **Analog Inputs (AI1-4)**: Configure names, descriptions, units, and COV increments in [main/User_Settings.c](main/User_Settings.c). Read-only inputs suitable for sensor integration.
+## BACnet MS/TP Defaults
 
-- **Binary Inputs (BI1-4)**: Configure names, descriptions, active/inactive text in [main/User_Settings.c](main/User_Settings.c). Read-only binary states.
+| Setting | Default |
+|---|---|
+| Baud rate | 38400 |
+| Max Master | 127 |
+| Max Info Frames | 80 |
 
-- **Binary Outputs (BO1-4)**: Configure names, descriptions, active/inactive text, and initial states in [main/User_Settings.c](main/User_Settings.c). Writable control outputs with priority support.
+---
 
-### Sensor Data Mapping
+## Build
 
-- **SEN54 Parameters**: Select which sensor measurement (PM1.0, PM2.5, PM4.0, PM10, temperature, humidity, VOC index, or NOx index) to map to each Analog Value object in [main/main.c](main/main.c) — look for the `sen54_task()` function. Current default mapping: AV1=Temperature, AV2=Humidity, AV3=PM2.5, AV4=VOC Index, AV5=PM1.0, AV6=PM4.0, AV7=Auto Cleaning Interval (seconds).
+Requires ESP-IDF.
 
-## Architecture
+```bash
+idf.py build
+idf.py flash monitor
+```
 
-### Components
-
-- **[components/bacnet-stack](components/bacnet-stack)** - BACnet/IP stack (modified from bacnet-stack/bacnet-stack)
-- **[components/sen54](components/sen54)** - Sensirion SEN54 I2C driver
-- **[components/pms5003](components/pms5003)** - PMS5003 UART particulate sensor driver
-
-Legacy Arduino display libraries (TFT_eSPI / Adafruit display stack) have been removed from this repository.
-
-- **[main](main/)** - Application code
-  - `main.c` - BACnet initialization and main loop
-  - `analog_value.c/h` - Analog Value object creation and NVS persistence
-  - `binary_value.c/h` - Binary Value object creation and NVS persistence
-  - `analog_input.c/h` - Analog Input object creation and NVS persistence
-  - `binary_input.c/h` - Binary Input object creation and NVS persistence
-  - `binary_output.c/h` - Binary Output object creation and NVS persistence
-  - `display.cpp` - TFT display driver
-  - `wifi_helper.c` - WiFi configuration helpers
-
-### Display Layout
-
-| Item | Type | Display |
-|------|------|---------|
-| AV1 | Analog Value | Temp, numeric (1 decimal) |
-| AV2 | Analog Value | %HR, numeric (1 decimal) |
-| AV3 | Analog Value | PM2.5, numeric (0 decimals) |
-| AV4 | Analog Value | VOC, numeric (0 decimals) |
-| Footer | Status Text | BACnet ID and MS/TP MAC |
-
-## BACnet Integration
-
-The device broadcasts its Device ID and manages BACnet objects that can be read/written by any BACnet/IP or BACnet MS/TP client (e.g., YABE, Tridium Niagara, Metasys).
-
-### BACnet Objects Exposed
-
-- **Device**: 55596 (configurable in [main/User_Settings.c](main/User_Settings.c))
-- **Analog Values**: Instance 1, 2, 3, 4, 5, 6, 7
-- **Binary Values**: Instance 1, 2, 3, 4
-- **Analog Inputs**: Instance 1, 2, 3, 4
-- **Binary Inputs**: Instance 1, 2, 3, 4
-- **Binary Outputs**: Instance 1, 2, 3, 4
-
-## Modifications to bacnet-stack
-
-This project uses the official bacnet-stack with the following modifications:
-
-- **[components/bacnet-stack/](components/bacnet-stack/)** - Configured as ESP-IDF component
-- Simplified for embedded systems (reduced features, optimized for ESP32)
-- WiFi-based BACnet/IP instead of Ethernet
-
-The stack is configured as a local ESP-IDF component in [components/bacnet-stack](components/bacnet-stack).
+---
 
 ## Development Notes
 
-### Display Boundary Constants
+The project is designed so new hardware variants can replace:
 
-The display code uses boundary constants for easy layout modification:
+- sensors
+- display/UI
+- communication hardware
 
-```c
-#define DISP_X0    0
-#define DISP_Y0    0
-#define DISP_X1    319
-#define DISP_Y1    169
-#define DISP_WIDTH 320
-#define DISP_HEIGHT 170
-```
+without modifying the BACnet core.
 
-Position all elements relative to these constants to avoid hardcoding coordinates.
+Future examples:
 
-## Troubleshooting
+- ESP32 + SEN54 air monitor
+- ESP32-S3 Ethernet I/O controller
+- Touchscreen BACnet controller
+- Custom BACnet sensor gateways
 
-### Display orientation or color issues
-If display output looks mirrored, rotated, or has swapped colors, adjust ST7789 init parameters and rotation in [main/display.cpp](main/display.cpp) and recompile.
-
-### WiFi connection fails
-Check SSID/password in [main/User_Settings.c](main/User_Settings.c), then verify WiFi init/connection flow in [main/wifi_helper.c](main/wifi_helper.c).
-
-
-
+---
 
 ## References
 
-- [ESP-IDF Documentation](https://docs.espressif.com/projects/esp-idf/en/stable/)
+- ESP-IDF Documentation  
+https://docs.espressif.com/projects/esp-idf/
 
-
+- BACnet Stack  
+https://github.com/bacnet-stack/bacnet-stack

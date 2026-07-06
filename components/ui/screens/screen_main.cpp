@@ -5,8 +5,6 @@
 
 #include "screen_common.h"
 
-#define DISP_WIDTH 320
-
 static lv_obj_t *s_value_labels[4] = { NULL };
 static lv_obj_t *s_footer_label = NULL;
 static char s_last_footer_text[40] = {0};
@@ -14,7 +12,7 @@ static char s_last_footer_text[40] = {0};
 lv_obj_t *screen_main_create(void)
 {
     static const char *labels[4] = { "Temp", "%HR", "PM2.5", "VOC" };
-    const lv_coord_t disp_text_x = 20; // distance from left border to the left edge of the text
+    const lv_coord_t disp_text_x = UI_SCREEN_MARGIN_X + 6;
     const lv_coord_t disp_text_y = 20; // distance from top border to the top edge of the text
     const lv_coord_t disp_row_spacing = 25; // spacing between rows of text
     const lv_coord_t value_x = 123; // distance from left border to the left edge of the value
@@ -44,15 +42,7 @@ lv_obj_t *screen_main_create(void)
             lv_color_hex(0xFFFFFF)); // WHITE
     }
 
-lv_obj_t *arrow = create_text_label(
-    screen,
-    ">",
-    0,
-    0,
-    &lv_font_montserrat_24,
-    lv_color_hex(0x00FFFF));
-
-lv_obj_align(arrow, LV_ALIGN_RIGHT_MID, -5, 0);
+    create_nav_arrow(screen, ">", LV_ALIGN_RIGHT_MID);
 
 
     s_footer_label = create_text_label(

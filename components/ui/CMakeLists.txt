@@ -5,6 +5,7 @@ idf_component_register(
          "screens/screen_common.cpp"
          "screens/screen_main.cpp"
          "screens/screen_2.cpp"
+         "screens/screen_3.cpp"
     INCLUDE_DIRS "." "screens"
     REQUIRES freertos bacnet_app product_config lvgl__lvgl sen54
     PRIV_REQUIRES driver esp_driver_i2c esp_driver_spi esp_driver_uart esp_lcd esp_timer

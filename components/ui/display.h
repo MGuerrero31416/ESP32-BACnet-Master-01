@@ -12,6 +12,12 @@ void display_init(void);
 
 /* Update display with BACnet object values */
 void display_update_values(float av1, float av2, float av3, float av4);
+void display_update_sen54_controls(bool measurement_enabled);
+void display_update_sen54_diagnostics(
+	bool fan_failure,
+	bool laser_error,
+	bool voc_error,
+	bool rht_error);
 
 /* Update bottom footer with BACnet device instance, MS/TP MAC, and current IPv4 address. */
 void display_update_footer(

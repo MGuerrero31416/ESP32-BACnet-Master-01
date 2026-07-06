@@ -3,6 +3,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_heap_caps.h"
 
 #include "User_Settings.h"
 #include "bacnet_app.h"
@@ -11,6 +13,17 @@
 
 static const char *TAG = "bacnet";
 static TaskHandle_t bacnet_cov_task_handle = NULL;
+
+static void log_heap_state(const char *context)
+{
+    ESP_LOGI(
+        TAG,
+        "[HEAP] %s free=%u min=%u internal=%u",
+        context,
+        (unsigned)esp_get_free_heap_size(),
+        (unsigned)esp_get_minimum_free_heap_size(),
+        (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+}
 
 static void bacnet_cov_task(void *pvParameters)
 {
@@ -40,7 +53,8 @@ static void bacnet_cov_task(void *pvParameters)
 
 void bacnet_cov_start(void)
 {
-    if (xTaskCreate(bacnet_cov_task, "bacnet_cov", 24576, NULL, 4, &bacnet_cov_task_handle) != pdPASS) {
+    log_heap_state("before create bacnet_cov task");
+    if (xTaskCreate(bacnet_cov_task, "bacnet_cov", 20480, NULL, 4, &bacnet_cov_task_handle) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create bacnet_cov task");
     }
 }

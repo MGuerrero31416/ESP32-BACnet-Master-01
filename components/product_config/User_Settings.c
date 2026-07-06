@@ -20,7 +20,7 @@ static const char *user_settings_bool_text(bool value)
 
 /* WiFi settings */
 const bool USER_ENABLE_BACNET_IP = true;
-const bool USER_ENABLE_SEN54 = false;
+const bool USER_ENABLE_SEN54 = true;
 const char USER_WIFI_SSID[] = PRIVATE_WIFI_SSID;
 const char USER_WIFI_PASS[] = PRIVATE_WIFI_PASS;
 const bool USER_WIFI_USE_STATIC_IP = false;
@@ -188,7 +188,7 @@ const char *USER_BV_INACTIVE_TEXT[USER_BV_COUNT] = {
 };
 const uint8_t USER_BV_INITIAL_VALUES[USER_BV_COUNT] = {
     BINARY_INACTIVE,
-    BINARY_INACTIVE,
+    BINARY_ACTIVE,
     BINARY_INACTIVE,
     BINARY_INACTIVE
 };

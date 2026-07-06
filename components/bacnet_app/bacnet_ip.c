@@ -6,6 +6,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_heap_caps.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
 
@@ -22,6 +24,17 @@
 #include "bacnet/datalink/bip.h"
 
 static const char *TAG = "bacnet";
+
+static void log_heap_state(const char *context)
+{
+    ESP_LOGI(
+        TAG,
+        "[HEAP] %s free=%u min=%u internal=%u",
+        context,
+        (unsigned)esp_get_free_heap_size(),
+        (unsigned)esp_get_minimum_free_heap_size(),
+        (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+}
 
 static void bacnet_receive_task(void *pvParameters)
 {
@@ -66,6 +79,7 @@ void bacnet_ip_register_with_bbmd(void)
 
 void bacnet_ip_start(void)
 {
+    log_heap_state("before create bacnet_rx task");
     if (xTaskCreate(bacnet_receive_task, "bacnet_rx", 16384, NULL, 5, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create bacnet_rx task");
     }

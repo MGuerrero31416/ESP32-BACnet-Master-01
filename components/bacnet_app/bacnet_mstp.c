@@ -5,6 +5,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_heap_caps.h"
 
 #include "User_Settings.h"
 #include "mstp_rs485.h"
@@ -20,6 +22,17 @@
 #include "bacnet/datalink/mstp.h"
 
 static const char *TAG = "bacnet";
+
+static void log_heap_state(const char *context)
+{
+    ESP_LOGI(
+        TAG,
+        "[HEAP] %s free=%u min=%u internal=%u",
+        context,
+        (unsigned)esp_get_free_heap_size(),
+        (unsigned)esp_get_minimum_free_heap_size(),
+        (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+}
 
 static volatile uint32_t mstp_pdu_count = 0;
 static volatile uint32_t mstp_apdu_count = 0;
@@ -126,6 +139,7 @@ bool bacnet_mstp_init(void)
 
 void bacnet_mstp_start(void)
 {
+    log_heap_state("before create bacnet_mstp_rx task");
     if (xTaskCreate(bacnet_mstp_receive_task, "bacnet_mstp_rx", 12288, NULL, 5, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create bacnet_mstp_rx task");
     }

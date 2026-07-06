@@ -1,9 +1,16 @@
 #include "display.h"
 #include "touch_bsp.h"
 #include "board_config.h"
-#include "screens/screen_2.h"
-#include "screens/screen_3.h"
+#include "ui_profile.h"
 #include "screens/screen_main.h"
+
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_DIAGNOSTICS
+#include "screens/screen_2.h"
+#endif
+
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_CONTROLS
+#include "screens/screen_3.h"
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -38,8 +45,12 @@ static void log_heap_state(const char *context)
 
 typedef enum {
     SCREEN_MAIN = 0,
-    SCREEN_2 = 1,
-    SCREEN_3 = 2,
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_DIAGNOSTICS
+    SCREEN_2,
+#endif
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_CONTROLS
+    SCREEN_3,
+#endif
     SCREEN_COUNT
 } display_screen_t;
 
@@ -54,13 +65,21 @@ static lv_indev_drv_t s_indev_drv;
 static esp_timer_handle_t s_lvgl_tick_timer = NULL;
 
 static lv_obj_t *s_screen_main = NULL;
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_DIAGNOSTICS
 static lv_obj_t *s_screen_2 = NULL;
+#endif
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_CONTROLS
 static lv_obj_t *s_screen_3 = NULL;
+#endif
 static volatile display_screen_t s_active_screen = SCREEN_MAIN;
 static bool s_display_ready = false;
 
-#define DISP_WIDTH 320
-#define DISP_HEIGHT 170
+#if !UI_PROFILE_ENABLE_SCREEN_MAIN_MEASUREMENTS
+#error "UI profile must enable main measurements screen"
+#endif
+
+#define DISP_WIDTH UI_PROFILE_EXPECTED_DISPLAY_WIDTH
+#define DISP_HEIGHT UI_PROFILE_EXPECTED_DISPLAY_HEIGHT
 
 #define LCD_HOST BOARD_LCD_SPI_HOST
 #define LCD_PIXEL_CLOCK_HZ (20 * 1000 * 1000)
@@ -78,8 +97,12 @@ static bool s_display_ready = false;
 #define LVGL_TICK_PERIOD_MS 2
 
 static void create_main_screen(void);
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_DIAGNOSTICS
 static void create_screen_2(void);
+#endif
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_CONTROLS
 static void create_screen_3(void);
+#endif
 static void set_active_screen(display_screen_t next_screen);
 static void touch_gesture_task(void *pvParameters);
 static void lvgl_task(void *pvParameters);
@@ -147,25 +170,33 @@ static void create_main_screen(void)
     s_screen_main = screen_main_create();
 }
 
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_DIAGNOSTICS
 static void create_screen_2(void)
 {
     s_screen_2 = screen_2_create();
 }
+#endif
 
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_CONTROLS
 static void create_screen_3(void)
 {
     s_screen_3 = screen_3_create();
 }
+#endif
 
 static lv_obj_t *get_screen_object(display_screen_t screen)
 {
     switch (screen) {
     case SCREEN_MAIN:
         return s_screen_main;
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_DIAGNOSTICS
     case SCREEN_2:
         return s_screen_2;
+#endif
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_CONTROLS
     case SCREEN_3:
         return s_screen_3;
+#endif
     case SCREEN_COUNT:
     default:
         return s_screen_main;
@@ -364,8 +395,15 @@ extern "C" void display_init(void)
 
     if (xSemaphoreTake(s_display_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         create_main_screen();
+
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_DIAGNOSTICS
         create_screen_2();
+#endif
+
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_CONTROLS
         create_screen_3();
+#endif
+
         lv_scr_load(s_screen_main);
         s_active_screen = SCREEN_MAIN;
         s_display_ready = true;
@@ -413,6 +451,7 @@ extern "C" void display_update_values(float av1, float av2, float av3, float av4
 
 extern "C" void display_update_sen54_controls(bool measurement_enabled)
 {
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_CONTROLS
     if (!s_display_mutex || !s_display_ready) {
         return;
     }
@@ -424,6 +463,9 @@ extern "C" void display_update_sen54_controls(bool measurement_enabled)
     screen_3_update_measurement(measurement_enabled);
 
     xSemaphoreGive(s_display_mutex);
+#else
+    (void)measurement_enabled;
+#endif
 }
 
 extern "C" void display_update_sen54_diagnostics(
@@ -432,6 +474,7 @@ extern "C" void display_update_sen54_diagnostics(
     bool voc_error,
     bool rht_error)
 {
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_DIAGNOSTICS
     if (!s_display_mutex || !s_display_ready) {
         return;
     }
@@ -443,6 +486,12 @@ extern "C" void display_update_sen54_diagnostics(
     screen_2_update_diagnostics(fan_failure, laser_error, voc_error, rht_error);
 
     xSemaphoreGive(s_display_mutex);
+#else
+    (void)fan_failure;
+    (void)laser_error;
+    (void)voc_error;
+    (void)rht_error;
+#endif
 }
 
 extern "C" void display_update_footer(

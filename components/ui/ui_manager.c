@@ -10,6 +10,7 @@
 
 #include "User_Settings.h"
 #include "display.h"
+#include "ui_profile.h"
 #include "bacnet_ip.h"
 #include "bacnet_mstp.h"
 #include "bacnet/bacapp.h"
@@ -57,12 +58,19 @@ static void ui_manager_task(void *pvParameters)
 
             bacnet_ip_get_ip_string(ip_text, sizeof(ip_text));
             display_update_values(av1, av2, av3, av4);
+
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_CONTROLS
             display_update_sen54_controls(measurement_enabled);
+#endif
+
+#if UI_PROFILE_ENABLE_SCREEN_SEN54_DIAGNOSTICS
             display_update_sen54_diagnostics(
                 fan_failure,
                 laser_error,
                 voc_error,
                 rht_error);
+#endif
+
             display_update_footer(
                 USER_BACNET_DEVICE_INSTANCE,
                 USER_MSTP_MAC_ADDRESS,

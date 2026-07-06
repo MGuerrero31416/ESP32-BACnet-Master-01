@@ -1,3 +1,5 @@
+# ============ This file is pending revision  =============
+
 # ESP32 BACnet/IP & MS/TP Air Quality Monitor (SEN54 + ST7789)
 
 **Current firmware:** v1.4.0
@@ -17,7 +19,7 @@ In addition to being a complete air quality monitor, this project serves as a fl
 - BACnet Change of Value (COV) support
 - NVS persistence for configurable BACnet objects
 - BACnet maintenance and diagnostic objects for the SEN54
-- ESP-IDF 5.5 with Arduino as a component
+- ESP-IDF 6.0
 - Easily extensible for additional BACnet objects and hardware
 
 ## Features
@@ -38,7 +40,7 @@ In addition to being a complete air quality monitor, this project serves as a fl
 - **NVS Override** – Setting `USER_OVERRIDE_NVS_ON_FLASH=1` restores factory defaults while preserving Wi-Fi credentials when appropriate
 - **Centralized Configuration** – Most project settings are defined in [main/User_Settings.c](main/User_Settings.c)
 - **ESP32 Wi-Fi** – Built-in Wi-Fi for BACnet/IP communication
-- **Arduino Framework** – Uses Arduino as an ESP-IDF component
+
 
 ### SEN54 Integration
 
@@ -76,13 +78,13 @@ The integrated Sensirion SEN54 driver provides:
 ![Device](docs/images/01.jpg)
 ![Device](docs/images/03.jpg)
 ![Device](docs/images/04.jpg)
-![Wiring](docs/images/ESP32-SEN54_WROM32_pinout.jpg)
+
 
 
 ## Hardware Requirements
 
-- **Development Board:** ESP32-WROOM-32 DevKit (or compatible ESP32 module)
-- **Display:** ST7789 SPI TFT (170×320 pixels)
+- **Development Board:** ESP32-S3 N116R8
+- **Display:** ST7789 1.9" 170×320 ST
 - **Air Quality Sensor:** Sensirion SEN54
 - **RS-485 Transceiver:** MAX485 (or compatible)
 
@@ -91,19 +93,14 @@ The integrated Sensirion SEN54 driver provides:
 ### ST7789 TFT Display
 
 - Resolution: 170×320 pixels
-- Driver: TFT_eSPI
-- Display rotation: 1
+- Driver path: ESP-IDF `esp_lcd` + LVGL
+- Orientation: XY swapped with panel gap configured in `main/display.cpp`
 
 #### Connections
 
 | Display Pin | ESP32 GPIO |
 |-------------|-----------:|
-| MOSI | GPIO23 |
-| SCLK | GPIO18 |
-| CS | GPIO15 |
-| DC | GPIO2 |
-| RST | GPIO4 |
-| Backlight | GPIO32 |
+
 
 ### Sensirion SEN54 Air Quality Sensor
 
@@ -197,7 +194,7 @@ The default BACnet mapping can be modified by editing `sen54_task()` in [main/ma
 
 ## Build Requirements
 
-- **ESP-IDF:** v5.5.x
+- **ESP-IDF:** v6.0.x
 - **Python:** 3.11+
 - **Toolchain:** xtensa-esp-elf (ESP32)
 
@@ -205,19 +202,16 @@ The default BACnet mapping can be modified by editing `sen54_task()` in [main/ma
 
 ### Display Driver Settings
 
-Display initialization and pin mapping are configured in [components/TFT_eSPI/User_Setup.h](components/TFT_eSPI/User_Setup.h) and [main/display.cpp](main/display.cpp), including:
+Display initialization and pin mapping are configured in [main/display.cpp](main/display.cpp), including:
 
-- `TFT_MOSI 23`
-- `TFT_SCLK 18`
-- `TFT_CS 15`
-- `TFT_DC 2`
-- `TFT_RST 4`
-- `TFT_BL 32`
-- `tft.setRotation(1)`
+- `LCD_PIN_NUM_MOSI 13`
+- `LCD_PIN_NUM_CLK 10`
+- `LCD_PIN_NUM_CS 12`
+- `LCD_PIN_NUM_DC 11`
+- `LCD_PIN_NUM_RST 9`
+- `LCD_GAP_X 0`, `LCD_GAP_Y 35`
+- `esp_lcd_panel_swap_xy(..., true)` and `esp_lcd_panel_mirror(..., true, false)`
 
-### FreeRTOS Configuration
-
-Arduino framework requires FreeRTOS tick rate of 1000Hz. This is set in [sdkconfig](sdkconfig):
 
 ```
 CONFIG_FREERTOS_HZ=1000
@@ -255,9 +249,10 @@ Most user-configurable settings are centralized in [main/User_Settings.c](main/U
 
 - **[components/bacnet-stack](components/bacnet-stack)** - BACnet/IP stack (modified from bacnet-stack/bacnet-stack)
 - **[components/sen54](components/sen54)** - Sensirion SEN54 I2C driver
-- **[components/Adafruit_BusIO](components/Adafruit_BusIO)** - Adafruit BusIO support library
-- **[components/Adafruit_GFX_Library](components/Adafruit_GFX_Library)** - Adafruit graphics primitives
-- **[components/Adafruit_ST7735_and_ST7789_Library](components/Adafruit_ST7735_and_ST7789_Library)** - Adafruit ST77xx driver library
+- **[components/pms5003](components/pms5003)** - PMS5003 UART particulate sensor driver
+
+Legacy Arduino display libraries (TFT_eSPI / Adafruit display stack) have been removed from this repository.
+
 - **[main](main/)** - Application code
   - `main.c` - BACnet initialization and main loop
   - `analog_value.c/h` - Analog Value object creation and NVS persistence
@@ -326,8 +321,7 @@ If display output looks mirrored, rotated, or has swapped colors, adjust ST7789 
 ### WiFi connection fails
 Check SSID/password in [main/User_Settings.c](main/User_Settings.c), then verify WiFi init/connection flow in [main/wifi_helper.c](main/wifi_helper.c).
 
-### Linker errors with Arduino
-Ensure `CONFIG_FREERTOS_HZ=1000` is set in [sdkconfig](sdkconfig) and rebuild with `idf.py fullclean && idf.py build`.
+
 
 
 ## References

@@ -10,6 +10,7 @@
 
 /* WiFi settings */
 extern const bool USER_ENABLE_BACNET_IP;
+extern const bool USER_ENABLE_SEN54;
 extern const char USER_WIFI_SSID[];
 extern const char USER_WIFI_PASS[];
 extern const bool USER_WIFI_USE_STATIC_IP;

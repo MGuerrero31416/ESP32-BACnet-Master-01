@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "pms5003.c"
+    SRCS "app_system.c"
     INCLUDE_DIRS "."
-    REQUIRES driver
+    REQUIRES nvs_flash
 )

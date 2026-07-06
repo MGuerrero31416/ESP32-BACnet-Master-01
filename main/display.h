@@ -1,11 +1,13 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Initialize the TFT display (TFT_eSPI, ST7789 170x320) */
+/* Initialize the LVGL display layer for the ST7789 170x320 panel. */
 void display_init(void);
 
 /* Update display with BACnet object values */

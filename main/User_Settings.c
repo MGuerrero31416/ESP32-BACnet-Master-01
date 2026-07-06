@@ -4,7 +4,9 @@
 #include "esp_log.h"
 #include "bacnet/bacenum.h"
 #include "bacnet/basic/object/device.h"
+#if __has_include("User_Settings_private.h")
 #include "User_Settings_private.h"
+#endif
 
 static const char *TAG_USER_SETTINGS = "user_settings";
 
@@ -15,15 +17,24 @@ static const char *user_settings_bool_text(bool value)
 
 /* WiFi settings */
 const bool USER_ENABLE_BACNET_IP = true;
+const bool USER_ENABLE_SEN54 = false;
 /* Edit these locally if you want to override the hidden defaults from
  * User_Settings_private.h. Keep real credentials out of GitHub.
  */
 #ifndef USER_WIFI_SSID
-#define USER_WIFI_SSID ""
+#define USER_WIFI_SSID_VALUE ""
+#else
+#define USER_WIFI_SSID_VALUE USER_WIFI_SSID
+#undef USER_WIFI_SSID
 #endif
 #ifndef USER_WIFI_PASS
-#define USER_WIFI_PASS ""
+#define USER_WIFI_PASS_VALUE ""
+#else
+#define USER_WIFI_PASS_VALUE USER_WIFI_PASS
+#undef USER_WIFI_PASS
 #endif
+const char USER_WIFI_SSID[] = USER_WIFI_SSID_VALUE;
+const char USER_WIFI_PASS[] = USER_WIFI_PASS_VALUE;
 const bool USER_WIFI_USE_STATIC_IP = true;
 const char USER_WIFI_STATIC_IP_ADDR[] = "10.120.245.96";
 const char USER_WIFI_STATIC_IP_GATEWAY[] = "10.210.245.254";

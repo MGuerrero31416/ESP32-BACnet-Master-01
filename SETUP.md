@@ -5,7 +5,7 @@ This guide explains how to set up this project on a new computer.
 ## Prerequisites
 
 ### 1. Install ESP-IDF
-The project requires ESP-IDF v5.5.1. Install it using the official Espressif installer or the setup instructions at:
+The project requires ESP-IDF v6.0.x. Install it using the official Espressif installer or the setup instructions at:
 
 - https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html
 
@@ -65,6 +65,8 @@ The `.vscode/settings.json` file contains computer-specific paths and is exclude
 ### Component Management
 
 The local BACnet stack component in `components/bacnet-stack/` is crucial. The `idf_component.yml` is configured to use only this local version to avoid dependency conflicts.
+
+Legacy Arduino display component folders were intentionally removed (`TFT_eSPI`, `Adafruit_BusIO`, `Adafruit_GFX_Library`, and `Adafruit_ST7735_and_ST7789_Library`). The display path is now native ESP-IDF (`esp_lcd`) with LVGL in `main/display.cpp`.
 
 ## Troubleshooting
 

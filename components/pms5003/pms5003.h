@@ -3,16 +3,17 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "board_config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // GPIO Configuration
-#define PMS5003_RX_PIN 5      // ESP32 RX on GPIO5 (sensor TX)
-#define PMS5003_TX_PIN 4      // ESP32 TX on GPIO4 (sensor RX)
-#define PMS5003_SET_PIN 6     // PMS5003 RST (reset control)
-#define PMS5003_UART_NUM UART_NUM_1
+#define PMS5003_RX_PIN BOARD_PMS5003_RX_PIN      // ESP32 RX (sensor TX)
+#define PMS5003_TX_PIN BOARD_PMS5003_TX_PIN      // ESP32 TX (sensor RX)
+#define PMS5003_SET_PIN BOARD_PMS5003_SET_PIN    // PMS5003 RST (reset control)
+#define PMS5003_UART_NUM BOARD_PMS5003_UART_NUM
 
 // Sensor data structure - matches PMS5003 frame layout exactly
 typedef struct {

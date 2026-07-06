@@ -2,7 +2,7 @@
 
 #include "driver/i2c_master.h"
 
-#define TOUCH_I2C_PORT    1
+#define TOUCH_I2C_PORT    BOARD_TOUCH_I2C_PORT
 #define TOUCH_I2C_FREQ_HZ 200000
 
 static bool s_touch_ready = false;

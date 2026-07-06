@@ -1,5 +1,6 @@
 #include "display.h"
 #include "touch_bsp.h"
+#include "board_config.h"
 #include "screens/screen_2.h"
 #include "screens/screen_3.h"
 #include "screens/screen_main.h"
@@ -61,14 +62,14 @@ static bool s_display_ready = false;
 #define DISP_WIDTH 320
 #define DISP_HEIGHT 170
 
-#define LCD_HOST SPI2_HOST
+#define LCD_HOST BOARD_LCD_SPI_HOST
 #define LCD_PIXEL_CLOCK_HZ (20 * 1000 * 1000)
-#define LCD_PIN_NUM_MOSI 13
-#define LCD_PIN_NUM_CLK 10
-#define LCD_PIN_NUM_CS 12
-#define LCD_PIN_NUM_DC 11
-#define LCD_PIN_NUM_RST 9
-#define LCD_PIN_NUM_BK_LIGHT (-1)
+#define LCD_PIN_NUM_MOSI BOARD_LCD_PIN_NUM_MOSI
+#define LCD_PIN_NUM_CLK BOARD_LCD_PIN_NUM_CLK
+#define LCD_PIN_NUM_CS BOARD_LCD_PIN_NUM_CS
+#define LCD_PIN_NUM_DC BOARD_LCD_PIN_NUM_DC
+#define LCD_PIN_NUM_RST BOARD_LCD_PIN_NUM_RST
+#define LCD_PIN_NUM_BK_LIGHT BOARD_LCD_PIN_NUM_BK_LIGHT
 #define LCD_H_RES 170
 #define LCD_V_RES 320
 #define LCD_GAP_X 0

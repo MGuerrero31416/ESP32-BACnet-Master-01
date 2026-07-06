@@ -5,11 +5,12 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
+#include "board_config.h"
 
-#define MSTP_UART_PORT UART_NUM_2
-#define MSTP_UART_TX_PIN GPIO_NUM_17
-#define MSTP_UART_RX_PIN GPIO_NUM_16
-#define MSTP_UART_DE_PIN GPIO_NUM_5
+#define MSTP_UART_PORT BOARD_RS485_UART_PORT
+#define MSTP_UART_TX_PIN BOARD_RS485_UART_TX_PIN
+#define MSTP_UART_RX_PIN BOARD_RS485_UART_RX_PIN
+#define MSTP_UART_DE_PIN BOARD_RS485_UART_DE_RE_PIN
 #define MSTP_UART_BAUD_DEFAULT 38400U
 #define MSTP_UART_RX_BUF_SIZE 512
 #define MSTP_UART_TX_BUF_SIZE 512

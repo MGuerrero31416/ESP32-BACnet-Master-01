@@ -1,4 +1,4 @@
-#include "pms5003.h"
+#include "pms5003_legacy.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "esp_log.h"

@@ -1,4 +1,4 @@
-# ============ This file is pending revision  =============
+# = This file is pending revision  =
 
 # ESP32 BACnet/IP & MS/TP Air Quality Monitor (SEN54 + ST7789)
 

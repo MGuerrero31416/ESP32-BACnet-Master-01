@@ -1,7 +1,7 @@
 #include "display.h"
 #include "touch_bsp.h"
-#include "ui/screen_2.h"
-#include "ui/screen_main.h"
+#include "screens/screen_2.h"
+#include "screens/screen_main.h"
 
 #include <stdio.h>
 #include <string.h>

@@ -1,0 +1,4 @@
+#pragma once
+
+#define PRIVATE_WIFI_SSID ""
+#define PRIVATE_WIFI_PASS ""

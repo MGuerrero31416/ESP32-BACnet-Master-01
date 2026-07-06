@@ -112,3 +112,4 @@ build_*.bat
 
 # Local secrets
 main/User_Settings_private.h
+components/product_config/User_Settings_Private.h

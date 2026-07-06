@@ -1,8 +1,8 @@
-# ESP32 BACnet/IP + MS/TP Air Quality Monitor
+# ESP32 BACnet/IP + MS/TP Platform
 
-ESP32-based BACnet device supporting **BACnet/IP (Wi-Fi)** and **BACnet MS/TP (RS-485)**.
+ESP32-based BACnet device firmware supporting **BACnet/IP (Wi-Fi/Ethernet)** and **BACnet MS/TP (RS-485)**.
 
-This project started as an air quality monitor using the **Sensirion SEN54** sensor and a **ST7789 touch display**, but it is designed as a reusable ESP-IDF BACnet platform for other sensors, displays, and automation devices.
+This project started as an air quality monitor using the **Sensirion SEN54** sensor and a **ST7789 touch display**, and now serves as a reusable ESP-IDF BACnet platform for different sensors, displays, and hardware variants.
 
 The firmware exposes sensor values, diagnostics, and control functions as standard BACnet objects.
 
@@ -23,7 +23,7 @@ The firmware exposes sensor values, diagnostics, and control functions as standa
 
 ## Hardware
 
-Current reference hardware:
+Current reference implementation:
 
 | Device | Description |
 |---|---|
@@ -48,7 +48,7 @@ Default configuration:
 
 ---
 
-## SEN54 Default Mapping
+## Current Reference Implementation: SEN54 Default Mapping
 
 | Object | Value |
 |---|---|
@@ -62,7 +62,7 @@ Default configuration:
 
 ---
 
-## SEN54 Control Objects
+## Current Reference Implementation: SEN54 Control Objects
 
 | Object | Function |
 |---|---|
@@ -73,7 +73,7 @@ Default configuration:
 
 ---
 
-## SEN54 Diagnostics
+## Current Reference Implementation: SEN54 Diagnostics
 
 | Object | Status |
 |---|---|
@@ -84,9 +84,53 @@ Default configuration:
 
 ---
 
+## Hardware Variants and Board Profiles
+
+This project separates hardware, UI, and BACnet application configuration.
+
+Architecture:
+
+- board_config:
+    Hardware definition
+    - GPIO pins
+    - buses
+    - display controller
+    - touch controller
+    - RS-485 interface
+    - Ethernet hardware
+
+- ui_profile:
+    User interface selection
+    - display layouts
+    - available screens
+    - touch/no-touch behavior
+    - resolution-specific UI
+
+- product_config:
+    BACnet/application settings
+    - Device ID
+    - object names
+    - BACnet defaults
+    - network settings
+
+Supported future variants:
+
+- SEN54 air quality monitor
+- PMS5003 particulate monitor
+- ESP32 Ethernet BACnet gateway
+- Different LVGL displays
+- Touch or non-touch controllers
+- Different RS-485 adapters
+
+For creating new hardware variants see:
+
+[Creating New Board Profiles](docs/creating_new_board_profiles.md)
+
+---
+
 # Architecture
 
-The firmware uses ESP-IDF components to keep the BACnet core independent from hardware.
+The firmware uses ESP-IDF components to keep BACnet runtime logic independent from hardware and UI profile selection.
 
 ```
 main/
@@ -102,6 +146,25 @@ Application entry point only.
 ```
 components/
 
+├── board_config/
+│   Board hardware profiles
+
+├── ui/
+│   LVGL UI system
+│   UI profiles
+
+├── product_config/
+│   BACnet/product configuration
+
+├── sensors/
+│   Sensor applications
+
+├── networking/
+│   Wi-Fi / Ethernet support
+
+├── rs485/
+│   RS-485 abstraction
+
 ├── bacnet_app/
 │   BACnet runtime
 │   BACnet/IP
@@ -116,36 +179,15 @@ components/
 │   Binary Inputs
 │   Binary Outputs
 
-├── product_config/
-│   User configuration
-│   Device identity
-│   Network settings
-│   Object defaults
-
-├── sensors/
-│   Sensor application logic
-
-├── ui/
-│   Display
-│   Touch
-│   LVGL screens
-
-├── networking/
-│   Wi-Fi support
-
-├── rs485/
-│   RS-485 hardware layer
-
 └── system/
-    Boot initialization
-    NVS handling
+    Startup services
 ```
 
 ---
 
 ## Configuration
 
-Project settings are centralized in:
+Project BACnet/application settings are centralized in:
 
 ```
 components/product_config/User_Settings.c
@@ -195,20 +237,7 @@ idf.py flash monitor
 
 ## Development Notes
 
-The project is designed so new hardware variants can replace:
-
-- sensors
-- display/UI
-- communication hardware
-
-without modifying the BACnet core.
-
-Future examples:
-
-- ESP32 + SEN54 air monitor
-- ESP32-S3 Ethernet I/O controller
-- Touchscreen BACnet controller
-- Custom BACnet sensor gateways
+The project is designed so new board and UI variants can be introduced without modifying the BACnet core runtime.
 
 ---
 

@@ -211,7 +211,7 @@ A display profile should define:
 
 For a different display, create a new UI/display implementation rather than editing the BACnet core.
 
-Recommended structure:
+Recommended future structure (example):
 
 ```text
 components/ui/

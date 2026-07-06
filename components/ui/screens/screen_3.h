@@ -10,11 +10,7 @@ extern "C" {
 #endif
 
 lv_obj_t *screen_3_create(void);
-void screen_3_update_diagnostics(
-    bool fan_failure,
-    bool laser_error,
-    bool voc_error,
-    bool rht_error);
+void screen_3_update_measurement(bool enabled);
 
 #ifdef __cplusplus
 }

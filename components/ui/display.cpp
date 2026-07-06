@@ -421,7 +421,7 @@ extern "C" void display_update_sen54_controls(bool measurement_enabled)
         return;
     }
 
-    screen_2_update_measurement(measurement_enabled);
+    screen_3_update_measurement(measurement_enabled);
 
     xSemaphoreGive(s_display_mutex);
 }
@@ -440,7 +440,7 @@ extern "C" void display_update_sen54_diagnostics(
         return;
     }
 
-    screen_3_update_diagnostics(fan_failure, laser_error, voc_error, rht_error);
+    screen_2_update_diagnostics(fan_failure, laser_error, voc_error, rht_error);
 
     xSemaphoreGive(s_display_mutex);
 }

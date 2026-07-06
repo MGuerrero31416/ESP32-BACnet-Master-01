@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "app_system.c" "../../main/User_Settings.c"
-    INCLUDE_DIRS "." "../../main"
-    REQUIRES nvs_flash bacnet-stack
+    SRCS "app_system.c"
+    INCLUDE_DIRS "."
+    REQUIRES nvs_flash product_config
 )

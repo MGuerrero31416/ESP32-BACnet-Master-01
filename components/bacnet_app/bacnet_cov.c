@@ -4,7 +4,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
-#include "../../main/User_Settings.h"
+#include "User_Settings.h"
 #include "bacnet_app.h"
 
 #include "bacnet/basic/service/h_cov.h"

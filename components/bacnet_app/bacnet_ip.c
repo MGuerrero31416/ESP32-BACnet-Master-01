@@ -9,7 +9,7 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 
-#include "../../main/User_Settings.h"
+#include "User_Settings.h"
 #include "bacnet_app.h"
 
 #include "bacnet/bacapp.h"

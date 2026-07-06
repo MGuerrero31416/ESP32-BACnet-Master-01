@@ -6,7 +6,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
-#include "../../main/User_Settings.h"
+#include "User_Settings.h"
 #include "mstp_rs485.h"
 #include "bacnet_app.h"
 

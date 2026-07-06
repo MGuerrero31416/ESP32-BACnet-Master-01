@@ -10,7 +10,7 @@
 /* FreeRTOS for GPIO sync task */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "../../main/User_Settings.h"
+#include "User_Settings.h"
 
 static const char *TAG = "bacnet_bo";
 #define NVS_NAMESPACE "bacnet"

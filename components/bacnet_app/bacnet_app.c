@@ -9,7 +9,7 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 
-#include "../../main/User_Settings.h"
+#include "User_Settings.h"
 #include "analog_input.h"
 #include "analog_value.h"
 #include "binary_input.h"
